@@ -18,13 +18,14 @@ BIOSInputLoop:
     jnz     BIOSInputLoop
 
     ; Check if scan code is available
-    test    ax, ax
-    jz      BIOSInputLoop
+    ; test    ax, ax
+    ; jz      BIOSInputLoop
 
     ; pull keystroke from buffer
     mov     ah, 0
     int     0x16
 
+    cli
     push    ax
     mov     si, ScanCode
     call    PrintString
@@ -37,6 +38,16 @@ BIOSInputLoop:
     call    PrintString
     call    PrintHexAL
 
+    push    es
+    mov     ax, 0x0040
+    push    ax
+    pop     es
+    mov     al, [es:0x0017]
+    pop     es
+    mov     si, ShiftState
+    call    PrintString
+    call    PrintBinAL
+
     mov     si, CountInt1B
     call    PrintString
     mov     ax, [DataInt1B]
@@ -44,6 +55,7 @@ BIOSInputLoop:
 
     call    PrintCRLF
     pop     ax
+    sti
     cmp     al, 27
     jne     BIOSInputLoop
 
@@ -53,7 +65,6 @@ Terminate:
     mov     ax, 0x4c00
     int     0x21
 
-
 Vector1B:
     dw 0,0
 
@@ -61,26 +72,31 @@ DataInt1B:
     dw 0
 
 MyInt1B:
+    cli
     push    ax
     mov     ax, [CS:DataInt1B]
     inc     ax
     mov     [CS:DataInt1B], ax
     pop     ax
-    iret
+    iret ; automatic sti with iret/popf
 
 InitTraps:
+    cli
     mov [Vector1B], word MyInt1B
     mov [Vector1B+2],ds
 
     mov     al, 0x1b
     mov     di, Vector1B
     call    SwapVectors
+    sti
     ret
 
 DoneTraps:
+    cli
     mov     al, 0x1b
     mov     di, Vector1B
     call    SwapVectors
+    sti
     ret
 
 SwapVectors:
@@ -147,6 +163,27 @@ PrintHexAL:
     pop     cx
     ret
 
+PrintBinAL:
+    push    ax
+    push    cx
+    mov     cx, 8
+    mov     ah, al
+.Repeat:
+    test    ah, 10000000b
+    jz      .Zero
+    mov     al, '1'
+    jmp     .Display
+.Zero:
+    mov     al, '0'
+.Display:
+    shl     ah, 1
+    call    PrintAL
+    loop    .Repeat
+
+    pop     ax
+    pop     cx
+    ret
+
 MapToHex:
     add     al, 0x30
     cmp     al, 0x3a
@@ -192,6 +229,8 @@ ScanCode:
     db 'Scancode: ',0
 AsciiValue:
     db ', Ascii: ', 0
+ShiftState:
+    db ', Flags: ', 0
 CountInt1B:
     db ', Count Int1B: ',0
 Message:
