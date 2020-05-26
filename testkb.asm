@@ -122,8 +122,10 @@ SetIntVector:
 
 PrintHexAX:
     push    ax
-    call    PrintHexAL
+    push    ax
     mov     al, ah
+    call    PrintHexAL
+    pop     ax
     call    PrintHexAL
     pop     ax
     ret
@@ -191,7 +193,7 @@ ScanCode:
 AsciiValue:
     db ', Ascii: ', 0
 CountInt1B:
-    db ', Int1B Count: ',0
+    db ', Count Int1B: ',0
 Message:
     db 'Press the ESC key to exit'
 CRLF:
