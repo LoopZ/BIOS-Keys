@@ -7,6 +7,8 @@
 
     call InitTraps
 
+    mov     si, Message
+    call    PrintString
 
 BIOSInputLoop:
 
@@ -183,11 +185,14 @@ PrintCRLF:
     pop     si
     ret
 
+
 ScanCode:
     db 'Scancode: ',0
 AsciiValue:
     db ', Ascii: ', 0
 CountInt1B:
     db ', Int1B Count: ',0
+Message:
+    db 'Press the ESC key to exit'
 CRLF:
     db 0xd,0xa,0
